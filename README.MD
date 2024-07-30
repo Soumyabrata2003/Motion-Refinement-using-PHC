@@ -3,24 +3,6 @@
 This is a modified version of PHC (Perpetual Humanoid Control for Real-time Simulated Avatars ICCV 23) including the conversion of mixamo format bvh files to AMASS-style npz files for motion refinement. It has been faithfully borrowed from the official coding implementation (https://github.com/ZhengyiLuo/PHC)
 
 
-### Docs 
-- [Docs on SMPL_Robot](docs/smpl_robot_instruction.MD)
-- [Docker Instructions](docs/docker_instruction.MD) (from [@kexul](https://github.com/kexul))
-- [Webcam Demo](docs/video_to_control_demo.md) 
-- [Language Demo](docs/language_to_control_demo.md) 
-
-### Current Results on Cleaned AMASS (11313 Sequences)
-
-All evaluation is done using the mean SMPL body pose and adjust the height, using the same evaluation protocal as in [UHC](https://github.com/ZhengyiLuo/UniversalHumanoidControl/tree/master). Noticed that different evaluation protocal will lead to different results, and Isaac gym itself can lead to (slightly) different results based on batch size/machine setup. 
-
-| Models         | Succ | G-MPJPE | ACC |
-|----------------|:----:|:------------:|:----:|
-| PHC           | 98.9% |     37.5     | 3.3 |
-| PHC-KP          | 98.7% |     40.7     | 3.5 |
-| PHC+ [in Pulse](https://zhengyiluo.github.io/PULSE/)  | 100% |     26.6     | 2.7 |
-| PHC-Prim (single primitive) | 99.9% |     25.9     | 2.3 |
-| PHC-Fut (using future) | 100% |     25.3     | 2.5 |
-
 ### Dependencies
 
 To create the environment, follow the following instructions: 
@@ -58,7 +40,7 @@ python scripts/joint_monkey_smpl.py
 
 The SMPL model is used to adjust the height the humanoid robot to avoid penetnration with the ground during data loading. 
 
-4. Use the following script to download trained models and sample data.
+4. Use the following script to download trained models of original PHC project and sample data.
 
 ```
 bash download_data.sh
@@ -96,31 +78,8 @@ You can use the `render_o3d=True no_virtual_display=True` flag to render the SMP
 
 to do the above visulaization, press m (to cancel termination based on imitation), and then press j (to apply a large force to the humanoid). 
 
-### Imitation 
-
-🎇🎇🎇 New (keypoint model, can getup from the ground and walk back) | Best model for video/language model
-```
-python phc/run_hydra.py learning=im_mcp_big learning.params.network.ending_act=False exp_name=phc_comp_kp_2 env.obs_v=7 env=env_im_getup_mcp robot=smpl_humanoid robot.real_weight_porpotion_boxes=False env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.models=['output/HumanoidIm/phc_kp_2/Humanoid.pth'] env.num_prim=3 env.num_envs=1  headless=False epoch=-1 test=True
-```
-
-🎇🎇🎇 New (rotation + keypoint model, can getup from the ground but not walk back -- model used in PULSE due to time constraint)
-```
-python phc/run_hydra.py learning=im_mcp_big  exp_name=phc_comp_3 env=env_im_getup_mcp robot=smpl_humanoid env.zero_out_far=False robot.real_weight_porpotion_boxes=False env.num_prim=3 env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.models=['output/HumanoidIm/phc_3/Humanoid.pth'] env.num_envs=1  headless=False epoch=-1 test=True
-```
-
-Evaluate full model:
-
-```
-## Shape + rotation + keypoint model
-
-python phc/run_hydra.py learning=im_mcp exp_name=phc_shape_mcp_iccv test=True env=env_im_getup_mcp robot=smpl_humanoid_shape robot.freeze_hand=True robot.box_body=False env.z_activation=relu env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.models=['output/HumanoidIm/phc_shape_pnn_iccv/Humanoid.pth'] env.num_envs=1  headless=False epoch=-1
 
 
-
-## keypoint model
-python phc/run_hydra.py learning=im_mcp exp_name=phc_kp_mcp_iccv  test=True env=env_im_getup_mcp robot=smpl_humanoid robot.freeze_hand=True robot.box_body=False env.z_activation=relu env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.models=['output/HumanoidIm/phc_kp_pnn_iccv/Humanoid.pth'] env.num_envs=1 env.obs_v=7 headless=False epoch=-1
-
-```
 
 Evaluate on AMASS:
 
@@ -144,77 +103,41 @@ python phc/run_hydra.py learning=im_pnn exp_name=phc_shape_pnn_iccv epoch=-1 tes
 python phc/run_hydra.py learning=im_pnn exp_name=phc_kp_pnn_iccv epoch=-1 test=True env=env_im_pnn env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl robot.freeze_hand=True robot.box_body=False env.num_envs=1 env.obs_v=7  headless=False
 ```
 
-### In-the-wild Avatar Control
-
-See [Webcam Demo](docs/video_to_control_demo.md)
-
-The tldr is run:
-
-```
-python scripts/demo/video_to_pose_server.py
-```
-
-then
-
-```
-python phc/run_hydra.py learning=im_mcp exp_name=phc_kp_mcp_iccv env=env_im_getup_mcp env.task=HumanoidImMCPDemo robot=smpl_humanoid robot.freeze_hand=True robot.box_body=False env.z_activation=relu env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.models=['output/HumanoidIm/phc_kp_pnn_iccv/Humanoid.pth'] env.num_envs=1 env.obs_v=7 headless=False epoch=-1 test=True no_virtual_display=True
-
-```
-
-
-See [Language-to-motion Demo](docs/language_to_control_demo.md)
-
-```
-python phc/run_hydra.py learning=im_mcp exp_name=phc_kp_mcp_iccv env=env_im_getup_mcp env.task=HumanoidImMCPDemo robot=smpl_humanoid robot.freeze_hand=True robot.box_body=False env.z_activation=relu env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.models=['output/HumanoidIm/phc_kp_pnn_iccv/Humanoid.pth'] env.num_envs=1 env.obs_v=7 headless=False epoch=-1 test=True no_virtual_display=True
-
-```
-
-### VR Controller Tracking
-
-```
-python phc/run_hydra.py learning=im_big exp_name=phc_prim_vr env=env_vr robot=smpl_humanoid robot.box_body=False env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl env.num_envs=1 headless=False epoch=-1 test=True no_virtual_display=True
-```
-
-
 
 ## Training
 
 
 
-### Data Processing AMASS
+### Data Processing bvh
 
-We train on a subset of the [AMASS](https://amass.is.tue.mpg.de/) dataset.
+We convert mixamo-formatted bvh files to [AMASS](https://amass.is.tue.mpg.de/) style npz format using these 3 scripts:
 
-For processing the AMASS, first, download the AMASS dataset from [AMASS](https://amass.is.tue.mpg.de/). Then, run the following script on the unzipped data:
+Run the following script on the unzipped data:
 
-
-```
-python scripts/data_process/process_amass_raw.py --dir [path_to_amass] --out_dir [out_dir]
-```
-
-which dumps the data into the `amass_db_smplh.pt` file. Then, run 
 
 ```
-python scripts/data_process/process_amass_db.py
+python scripts/data_process_bvh/process_sample_raw.py --dir [path_to_dataset] --out_dir [out_dir]
+```
+
+which dumps the data into the `bvh_db_smplh.pt` file. Then, run 
+
+```
+python scripts/data_process_bvh/process_sample_db.py
 ```
 
 We further process these data into Motionlib format by running the following script:
 
 ```
-python scripts/data_process/convert_amass_isaac.py
+python scripts/data_process_bvh/convert_sample_isaac.py
 ```
 
-Which should give you 11313 sequences for trainig. 
-
-
-You can also directly using the script `python scripts/data_process/convert_amass_data.py`
 
 ### Training PHC
 
 #### Train single primitive
 
 ```
-python phc/run_hydra.py learning=im_big exp_name=phc_prim env=env_im robot=smpl_humanoid env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl  
+python phc/run_hydra_2.py learning=im_big exp_name=phc_prim env=env_im robot=smpl_humanoid env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl  
 ```
 
 
@@ -284,7 +207,7 @@ The success rate is reported as "eval_success_rate" in the wandb logging, not th
 
 
 ## Citation
-If you find this work useful for your research, please cite our paper:
+If you find this work useful for your research, please cite:
 ```
 @inproceedings{Luo2023PerpetualHC,
     author={Zhengyi Luo and Jinkun Cao and Alexander W. Winkler and Kris Kitani and Weipeng Xu},
@@ -323,7 +246,7 @@ Also consider citing these prior works that are used in this project:
 ## References
 This repository is built on top of the following amazing repositories:
 * Main code framework is from: [IsaacGymEnvs](https://github.com/NVIDIA-Omniverse/IsaacGymEnvs)
-* Part of the SMPL_robot code is from: [UHC](https://github.com/ZhengyiLuo/UniversalHumanoidControl)
+* Part of the SMPL_robot code is from: [PHC](https://github.com/ZhengyiLuo/PHC) and [UHC](https://github.com/ZhengyiLuo/UniversalHumanoidControl)
 * SMPL models and layer is from: [SMPL-X model](https://github.com/vchoutas/smplx)
 
 Please follow the lisence of the above repositories for usage. 

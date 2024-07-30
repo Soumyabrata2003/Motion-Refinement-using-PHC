@@ -1,6 +1,6 @@
 # Perpetual Humanoid Control for Real-time Simulated Avatars (with bvh files)
 
-This is a modified version of PHC (Perpetual Humanoid Control for Real-time Simulated Avatars ICCV 23) including the conversion of mixamo format bvh files to AMASS-style npz files for motion refinement. It has been faithfully borrowed from the official coding implementation (https://github.com/ZhengyiLuo/PHC)
+This is a modified version of PHC (Perpetual Humanoid Control for Real-time Simulated Avatars ICCV 23) including the conversion of mixamo format bvh files to AMASS-style npz files for motion refinement. It has been faithfully borrowed from the official coding implementation (https://github.com/ZhengyiLuo/PHC).
 
 
 ### Dependencies
@@ -110,7 +110,11 @@ python phc/run_hydra.py learning=im_pnn exp_name=phc_kp_pnn_iccv epoch=-1 test=T
 
 ### Data Processing bvh
 
-We convert mixamo-formatted bvh files to [AMASS](https://amass.is.tue.mpg.de/) style npz format using these 3 scripts:
+Clone [CAT](https://github.com/KosukeFukazawa/CharacterAnimationTools/tree/main) repo and convert mixamo-formatted bvh files to [AMASS](https://amass.is.tue.mpg.de/)-style npz format by running (note that this is for a single sample, however, it can be modified for directories easily) :
+
+```
+python scripts/data_process_bvh/bvh2smpl.py 
+```
 
 Run the following script on the unzipped data:
 

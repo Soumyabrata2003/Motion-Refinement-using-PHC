@@ -54,34 +54,8 @@ To evaluate with your own SMPL data, see the script `scripts/data_process/conver
 ## Evaluation 
 
 
-### Viewer Shortcuts
 
-| Keyboard | Function |
-| ---- | --- |
-| f | focus on humanoid |
-| Right click + WASD | change view port |
-| Shift + Right click + WASD | change view port fast |
-| r | reset episode |
-| j | apply large force to the humanoid |
-| l | record screenshot, press again to stop recording|
-| ; | cancel screen shot|
-| m | cancel termination based on imitation |
-
-... more shortcut can be found in `phc/env/tasks/base_task.py`
-
-Notes on rendering: I am using pyvirtualdisplay to record the video such that you can see all humanoids at the same time (default function will only capture the first environment). You can disable it using the flag `no_virtual_display=True`. 
-
-You can use the `render_o3d=True no_virtual_display=True` flag to render the SMPL mesh together with your Isaac Gym simulation in real time like this: 
-<div float="center">
-  <img src="assets/open3d.gif" />
-</div>
-
-to do the above visulaization, press m (to cancel termination based on imitation), and then press j (to apply a large force to the humanoid). 
-
-
-
-
-Evaluate on AMASS:
+Evaluate on Bvh/AMASS:
 
 ```
 ## Shape + rotation + keypoint model

@@ -1,4 +1,4 @@
-# Perpetual Humanoid Control for Real-time Simulated Avatars
+# Perpetual Humanoid Control for Real-time Simulated Avatars (with bvh files)
 
 This is a modified version of PHC (Perpetual Humanoid Control for Real-time Simulated Avatars ICCV 23) including the conversion of mixamo format bvh files to AMASS-style npz files for motion refinement. It has been faithfully borrowed from the official coding implementation (https://github.com/ZhengyiLuo/PHC)
 

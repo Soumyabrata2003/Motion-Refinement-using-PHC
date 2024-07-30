@@ -116,7 +116,7 @@ class HumanoidAMP(Humanoid):
 
         self._amp_obs_demo_buf = None
 
-        data_dir = "data/smpl"
+        data_dir = "/home/data/soumyabrata/smpl"
         self.smpl_parser_n = SMPL_Parser(model_path=data_dir, gender="neutral").to(self.device)
         self.smpl_parser_m = SMPL_Parser(model_path=data_dir, gender="male").to(self.device)
         self.smpl_parser_f = SMPL_Parser(model_path=data_dir, gender="female").to(self.device)

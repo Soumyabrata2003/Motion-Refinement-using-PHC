@@ -21,6 +21,10 @@ from scipy.spatial.transform import Rotation as sRot
 import random
 from phc.utils.flags import flags
 from enum import Enum
+
+# import torch.multiprocessing
+# torch.multiprocessing.set_sharing_strategy('file_system')
+
 USE_CACHE = False
 print("MOVING MOTION DATA TO GPU, USING CACHE:", USE_CACHE)
 
@@ -224,13 +228,15 @@ class MotionLibBase():
 
         motion_data_list = self._motion_data_list[sample_idxes.cpu().numpy()]
         mp.set_sharing_strategy('file_descriptor')
+        mp.set_sharing_strategy('file_system')
 
         manager = mp.Manager()
         queue = manager.Queue()
-        num_jobs = min(mp.cpu_count(), 64)
+        # print(mp.cpu_count())
+        num_jobs = min(mp.cpu_count(), 64) #64)
 
         if num_jobs <= 8 or not self.multi_thread:
-            num_jobs = 1
+            num_jobs = 1 #1
         if flags.debug:
             num_jobs = 1
         

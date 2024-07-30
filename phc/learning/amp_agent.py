@@ -811,6 +811,7 @@ class AMPAgent(common_agent.CommonAgent):
 
     def _build_amp_buffers(self):
         batch_shape = self.experience_buffer.obs_base_shape
+        print(batch_shape,self._amp_observation_space.shape,self.ppo_device)
         self.experience_buffer.tensor_dict['amp_obs'] = torch.zeros(batch_shape + self._amp_observation_space.shape, device=self.ppo_device)
         amp_obs_demo_buffer_size = int(self.config['amp_obs_demo_buffer_size'])
         self._amp_obs_demo_buffer = replay_buffer.ReplayBuffer(amp_obs_demo_buffer_size, self.ppo_device)  # Demo is the data from the dataset. Real samples

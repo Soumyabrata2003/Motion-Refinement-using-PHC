@@ -1,9 +1,9 @@
 # if given, will override the device setting in gym. 
 task: HumanoidIm
-project_name: "PHC"
+project_name: "PHC_2"
 notes:  " "
 motion_file: ""
-num_envs: 3072
+num_envs: 512 #128 #256 #512 #3072
 env_spacing: 5
 episode_length: 300
 is_flag_run: False

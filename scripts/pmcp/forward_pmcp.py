@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--exp', default='')
     parser.add_argument('--idx', default=0)
     parser.add_argument('--epoch', default=200000)
-    parser.add_argument('--data', default='data/amass/pkls/amass_train_data_take6.pkl')
+    parser.add_argument('--data', default='/home/data/soumyabrata/amass_db/amass_isaac_im_train_take6_upright_slim.pkl')
     
     args = parser.parse_args()
     
@@ -28,13 +28,13 @@ if __name__ == '__main__':
     import ipdb; ipdb.set_trace()
 
 
-    checkpoint = torch_ext.load_checkpoint(f"output/HumanoidIm/{exp_name}/Humanoid_{epoch:08d}.pth")
+    checkpoint = torch_ext.load_checkpoint(f"/home/data/soumyabrata/output/HumanoidIm/{exp_name}/Humanoid_{epoch:08d}.pth")
     amass_train_data_take6 = joblib.load(args.data)
 
     failed_keys_dict = {}
     termination_history_dict = {}
     all_keys = set()
-    for failed_path in sorted(glob.glob(f"output/HumanoidIm/{exp_name}/failed_*"))[:]:
+    for failed_path in sorted(glob.glob(f"/home/data/soumyabrata/output/HumanoidIm/{exp_name}/failed_*"))[:]:
         failed_idx = int(failed_path.split("/")[-1].split("_")[-1].split(".")[0])
         failed_keys_entry = joblib.load(failed_path)
         failed_keys = failed_keys_entry['failed_keys']
@@ -59,10 +59,10 @@ if __name__ == '__main__':
     for idx, key_name in enumerate(copy_keys):
         checkpoint['model'][key_name].copy_(checkpoint['model'][loading_keys[idx]])
         
-    torch_ext.save_checkpoint(f"output/HumanoidIm/{exp_name}/Humanoid_{epoch + 1:08d}", checkpoint)
+    torch_ext.save_checkpoint(f"/home/data/soumyabrata/output/HumanoidIm/{exp_name}/Humanoid_{epoch + 1:08d}", checkpoint)
 
     failed_dump = {key: amass_train_data_take6[key] for key in dump_keys if key in amass_train_data_take6}
 
-    os.makedirs(f"data/amass/pkls/auto_pmcp", exist_ok=True)
-    print(f"dumping {len(failed_dump)} samples to data/amass/pkls/auto_pmcp/{exp_name}_{epoch}.pkl")
-    joblib.dump(failed_dump, f"data/amass/pkls/auto_pmcp/{exp_name}_{epoch}.pkl")
+    os.makedirs(f"/home/data/soumyabrata/amass_pkl/pkls/auto_pmcp", exist_ok=True)
+    print(f"dumping {len(failed_dump)} samples to /home/data/soumyabrata/amass_pkl/pkls/auto_pmcp/{exp_name}_{epoch}.pkl")
+    joblib.dump(failed_dump, f"/home/data/soumyabrata/amass_pkl/pkls/auto_pmcp/{exp_name}_{epoch}.pkl")

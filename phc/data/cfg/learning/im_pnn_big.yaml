@@ -41,7 +41,7 @@ params:
       initializer:
         name: default
 
-  load_checkpoint: False
+  load_checkpoint: True #False
 
   config:
     name: Humanoid
@@ -61,7 +61,7 @@ params:
     score_to_win: 20000
     max_epochs: 10000000
     save_best_after: 100
-    save_frequency: 1500
+    save_frequency: 2000 #1500
     print_stats: False
     save_intermediate: True
     entropy_coef: 0.0
@@ -69,17 +69,17 @@ params:
     grad_norm: 50.0
     e_clip: 0.2
     horizon_length: 32
-    minibatch_size: 16384
+    minibatch_size: 2048 #1024 #4096 #8192 #16384
     mini_epochs: 6
     critic_coef: 5
     clip_value: False
     
     bounds_loss_coef: 10
-    amp_obs_demo_buffer_size: 200000
-    amp_replay_buffer_size: 200000
+    amp_obs_demo_buffer_size: 50000 #200000
+    amp_replay_buffer_size: 50000 #200000
     amp_replay_keep_prob: 0.01
     amp_batch_size: 512
-    amp_minibatch_size: 4096
+    amp_minibatch_size: 512 #256 #512 #1024 #2048 #4096
     disc_coef: 5
     disc_logit_reg: 0.01
     disc_grad_penalty: 5

@@ -276,7 +276,7 @@ def build_alg_runner(algo_observer):
 @hydra.main(
     version_base=None,
     config_path="../phc/data/cfg",
-    config_name="config",
+    config_name="config_2",
 )
 def main(cfg_hydra: DictConfig) -> None:
     global cfg_train

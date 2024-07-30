@@ -224,7 +224,7 @@ def process_qpos_list(qpos_list):
 
 
 amass_splits = {
-    'vald': ['HumanEva', 'MPI_HDM05', 'SFU', 'MPI_mosh'],
+    'valid': ['HumanEva', 'MPI_HDM05', 'SFU', 'MPI_mosh'],
     'test': ['Transitions_mocap', 'SSM_synced'],
     'train': ['CMU', 'MPI_Limits', 'TotalCapture', 'Eyes_Japan_Dataset', 'KIT', 'BML', 'EKUT', 'TCD_handMocap', "BMLhandball", "DanceDB", "ACCAD", "BMLmovi", "BioMotionLab", "Eyes", "DFaust"]  # Adding ACCAD
 }
@@ -237,7 +237,7 @@ for k, v in amass_splits.items():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", default=False)
-    parser.add_argument("--path", type=str, default="sample_data/amass_db_smplh.pt")
+    parser.add_argument("--path", type=str, default="/home/data/soumyabrata/amass_db/amass_db_smplh.pt")
     args = parser.parse_args()
 
     np.random.seed(0)
@@ -252,15 +252,15 @@ if __name__ == "__main__":
     seq_counter = 0
     db_dataset = args.path
     amass_db = joblib.load(db_dataset)
-    amass_occlusion = joblib.load("sample_data/amass_copycat_occlusion_v3.pkl")
+    amass_occlusion = joblib.load("/home/soumyabrata/PHC/sample_data/amass_copycat_occlusion_v3.pkl")
 
 
     qpos_list = list(amass_db.items())
     np.random.seed(0)
     np.random.shuffle(qpos_list)
-    smpl_parser_n = SMPL_Parser(model_path="data/smpl", gender="neutral", use_pca=False, create_transl=False)
-    smpl_parser_m = SMPL_Parser(model_path="data/smpl", gender="male", use_pca=False, create_transl=False)
-    smpl_parser_f = SMPL_Parser(model_path="data/smpl", gender="female", use_pca=False, create_transl=False)
+    smpl_parser_n = SMPL_Parser(model_path="/home/data/soumyabrata/smpl", gender="neutral", use_pca=False, create_transl=False)
+    smpl_parser_m = SMPL_Parser(model_path="/home/data/soumyabrata/smpl", gender="male", use_pca=False, create_transl=False)
+    smpl_parser_f = SMPL_Parser(model_path="/home/data/soumyabrata/smpl", gender="female", use_pca=False, create_transl=False)
 
     amass_seq_data = process_qpos_list(qpos_list)
      
@@ -284,6 +284,6 @@ if __name__ == "__main__":
         if not found:
             print(f"Not found!! {start_name}")
 
-    joblib.dump(train_data, f"sample_data/amass_{take_num}_train.pkl")
-    joblib.dump(test_data, f"sample_data/amass_{take_num}_test.pkl")
-    joblib.dump(valid_data, f"sample_data/amass_{take_num}_valid.pkl")
+    joblib.dump(train_data, f"/home/data/soumyabrata/amass_db_2/amass_{take_num}_train.pkl")
+    joblib.dump(test_data, f"/home/data/soumyabrata/amass_db_2/amass_{take_num}_test.pkl")
+    joblib.dump(valid_data, f"/home/data/soumyabrata/amass_db_2/amass_{take_num}_valid.pkl")

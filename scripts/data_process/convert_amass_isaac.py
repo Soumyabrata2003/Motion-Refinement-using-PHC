@@ -14,8 +14,9 @@ from pathlib import Path
 
 sys.path.append(os.getcwd())
 
-from smpl_sim.khrylib.utils import get_body_qposaddr
-from smpl_sim.smpllib.smpl_mujoco import SMPL_BONE_ORDER_NAMES as joint_names
+# from smpl_sim.khrylib.utils import get_body_qposaddr
+# from smpl_sim.smpllib.smpl_mujoco import SMPL_BONE_ORDER_NAMES as joint_names
+from smpl_sim.smpllib.smpl_mujoco_new import SMPL_BONE_ORDER_NAMES as joint_names
 from smpl_sim.smpllib.smpl_local_robot import SMPL_Robot as LocalRobot
 import scipy.ndimage.filters as filters
 from typing import List, Optional
@@ -38,7 +39,7 @@ def run(in_file: str, out_file: str):
 
     smpl_local_robot = LocalRobot(
         robot_cfg,
-        data_dir="data/smpl",
+        data_dir="/home/data/soumyabrata/smpl",
     )
 
     amass_data = joblib.load(in_file)
@@ -147,8 +148,8 @@ def run(in_file: str, out_file: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_file", type=str, default="sample_data/amass_copycat_take6_train.pkl")
-    parser.add_argument("--out_file", type=str, default="data/amass/pkls/amass_isaac_im_train_take6_upright_slim.pkl")
+    parser.add_argument("--in_file", type=str, default="/home/data/soumyabrata/amass_db_2/amass_copycat_take6_train.pkl")
+    parser.add_argument("--out_file", type=str, default="/home/data/soumyabrata/amass_db_2/amass_isaac_im_train_take6_upright_slim.pkl")
     args = parser.parse_args()
     run(
         in_file=args.in_file,

@@ -88,7 +88,7 @@ if __name__ == "__main__":
     }
     smpl_robot = SMPL_Robot(
         robot_cfg,
-        data_dir="data/smpl",
+        data_dir="/home/data/soumyabrata/smpl",
     )
     
     gender_beta = np.zeros((17))

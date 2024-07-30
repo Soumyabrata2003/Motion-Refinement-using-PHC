@@ -20,7 +20,7 @@ from smpl_sim.smpllib.smpl_local_robot import SMPL_Robot as LocalRobot
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", default=False)
-    parser.add_argument("--path", type=str, default="sample_data/amass_db_smplh.pt")
+    parser.add_argument("--path", type=str, default="/home/data/soumyabrata/amass_db/amass_db_smplh.pt")
     args = parser.parse_args()
     
     process_split = "train"
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         }
 
     smpl_local_robot = LocalRobot(robot_cfg,)
-    all_pkls = glob.glob("AMASS_data/**/*.npz", recursive=True)
+    all_pkls = glob.glob("/home/data/soumyabrata/amass/*/*/*.npz", recursive=True)
     amass_occlusion = joblib.load("sample_data/amass_copycat_occlusion_v3.pkl")
     amass_full_motion_dict = {}
     amass_splits = {
@@ -144,9 +144,9 @@ if __name__ == "__main__":
         
     import ipdb; ipdb.set_trace()
     if upright_start:
-        joblib.dump(amass_full_motion_dict, "data/amass/amass_train_take6_upright.pkl", compress=True)
+        joblib.dump(amass_full_motion_dict, "/home/data/soumyabrata/amass_new/amass_train_take6_upright.pkl", compress=True)
     else:
-        joblib.dump(amass_full_motion_dict, "data/amass/amass_train_take6.pkl", compress=True)
+        joblib.dump(amass_full_motion_dict, "/home/data/soumyabrata/amass_new/amass_train_take6.pkl", compress=True)
     # joblib.dump(amass_full_motion_dict, "data/amass/amass_test_take6.pkl", compress=True)
     # joblib.dump(amass_full_motion_dict, "data/amass_x/singles/total_capture.pkl", compress=True)
     # joblib.dump(amass_full_motion_dict, "data/amass_x/upright/singles/total_capture.pkl", compress=True)

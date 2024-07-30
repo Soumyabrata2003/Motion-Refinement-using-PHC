@@ -5,7 +5,7 @@ defaults:
   - learning: im
   - sim: default_sim
 
-project_name: "PHC"
+project_name: "PHC_sample"
 notes: "Default Notes"
 exp_name: &exp_name humanoid_smpl
 headless: True
@@ -14,9 +14,9 @@ no_log: False
 resume_str: null
 num_threads: 64 #1 
 test: False 
-output_path: /home/soumyabrata/PHC/output/HumanoidIm/${exp_name} #/home/data/soumyabrata/output/HumanoidIm/${exp_name}  
+output_path: /home/data/soumyabrata/output_red/HumanoidIm/${exp_name}
 torch_deterministic: False
-epoch: -1
+epoch: 0
 im_eval: False
 horovod: False # Use horovod for multi-gpu training, have effect only with rl_games RL library
 rl_device: "cuda:0"
@@ -43,5 +43,5 @@ hydra:
     env_set:
       OMP_NUM_THREADS: 1
   run:
-    dir: /home/data/soumyabrata/output/HumanoidIm/${exp_name}
+    dir: /home/data/soumyabrata/output_red/HumanoidIm/${exp_name}
 

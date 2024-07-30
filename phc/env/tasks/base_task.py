@@ -62,9 +62,15 @@ class BaseTask():
     def __init__(self, cfg, enable_camera_sensors=False):
         self.headless = cfg["headless"]
         if self.headless == False and not flags.no_virtual_display:
-            from pyvirtualdisplay.smartdisplay import SmartDisplay
-            self.virtual_display = SmartDisplay(size=(1800, 990), visible=True)
+            # from pyvirtualdisplay.smartdisplay import SmartDisplay
+            # self.virtual_display = SmartDisplay(size=(1800, 990), visible=True)
+            # self.virtual_display.start()
+            from pyvirtualdisplay import Display
+            # Replace with this
+            self.virtual_display = Display(size=(1800, 990), visible=True)
             self.virtual_display.start()
+            os.environ['DISPLAY'] = self.virtual_display.new_display_var
+
 
         self.gym = gymapi.acquire_gym()
         self.paused = False

@@ -1,5 +1,5 @@
 
-
+import os
 import os.path as osp
 from typing import OrderedDict
 import torch
@@ -245,6 +245,8 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
 
                 with torch.no_grad():
                     verts, joints = self.mesh_parser.get_joints_verts(pose=pose_aa, th_trans=root_trans_offset.cuda())
+
+            # print("pose_aa_initial",pose_aa.shape)
                     
             sim_verts = verts.numpy()[0]
             self.sim_mesh.vertices = o3d.utility.Vector3dVector(sim_verts)
@@ -320,12 +322,14 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
                 "device": self.device,
             })
             motion_eval_file = motion_train_file
+        
             self._motion_train_lib = MotionLibSMPL(motion_lib_cfg)
             motion_lib_cfg.im_eval = True
             self._motion_eval_lib = MotionLibSMPL(motion_lib_cfg)
-
             self._motion_lib = self._motion_train_lib
             self._motion_lib.load_motions(skeleton_trees=self.skeleton_trees, gender_betas=self.humanoid_shapes.cpu(), limb_weights=self.humanoid_limb_and_weights.cpu(), random_sample=(not flags.test) and (not self.seq_motions), max_len=-1 if flags.test else self.max_len)
+            
+            # print("self._name_sample:",self._name_sample)
 
         else:
             self._motion_lib = MotionLib(motion_file=motion_train_file, dof_body_ids=self._dof_body_ids, dof_offsets=self._dof_offsets, device=self.device)
@@ -560,6 +564,7 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
                     motion_res["root_pos"], motion_res["root_rot"], motion_res["dof_pos"], motion_res["root_vel"], motion_res["root_ang_vel"], motion_res["dof_vel"], \
                     motion_res["motion_bodies"], motion_res["motion_limb_weights"], motion_res["motion_aa"], motion_res["rg_pos"], motion_res["rb_rot"], motion_res["body_vel"], motion_res["body_ang_vel"]
             
+            # print("pose_aa_initial",pose_aa.shape)
             self._marker_pos[:] = ref_rb_pos
             # self._marker_rotation[..., self._track_bodies_id, :] = ref_rb_rot[..., self._track_bodies_id, :]
             
@@ -813,6 +818,73 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
         
         
         return obs
+    
+    def get_desired_contact(self, part_idx):
+        # Assuming the desired contact is inferred from the reference motion or target pose
+        # For example, you could compare the target pose with a reference ground height.
+
+        # Example: Compare the height of the body part with a threshold to determine contact
+        threshold_height = 0.1  # Example threshold for contact (adjust as needed)
+        body_part_pos = self._rigid_body_pos[:, part_idx, :]
+
+        # Desired contact if the body part is close to the ground
+        desired_contact = (body_part_pos[:, 2] < threshold_height).float()
+
+        return desired_contact
+
+    def get_actual_contact(self, part_idx):
+        # Assuming contact information is stored in self._contact_forces
+        # and critical body parts are indexed by part_idx.
+
+        # Get the contact force for the specific body part
+        contact_force = self._contact_forces[:, part_idx, :]
+
+        # Check if the contact force is non-zero, indicating contact
+        actual_contact = torch.norm(contact_force, dim=-1) > 0
+
+        return actual_contact.float()
+
+    def get_com_position(self):
+        # Assuming self._rigid_body_pos contains the positions of the rigid bodies.
+
+        # Get the number of rigid bodies
+        num_bodies = self._rigid_body_pos.shape[1]
+
+        # Compute the center of mass as the average of all body positions
+        com_position = self._rigid_body_pos.sum(dim=1) / num_bodies
+
+        return com_position
+
+    def get_base_position(self):
+        # Identify the indices of the body parts that might be in contact with the ground
+        contact_indices = self.get_contact_indices()  # This function should return the indices of the parts in contact with the ground
+
+        # Extract the positions of those body parts
+        contact_positions = self._rigid_body_pos[:, contact_indices, :]
+
+        # Calculate the average position of the contact points
+        base_position = contact_positions.mean(dim=1)
+
+        return base_position
+
+    def get_contact_indices(self):
+        # This function determines which body parts are currently in contact with the ground.
+        # Example: you could use a threshold on the z-axis position or a contact flag if available.
+
+        contact_indices = []
+        for part_idx in self._contact_body_ids:  # Use self._contact_body_ids for correct indexing
+            actual_contact = self.get_actual_contact(part_idx)
+            if actual_contact.any():
+                contact_indices.append(part_idx)
+
+        # Ensure there are always at least two points to form a stable base; if fewer, use a fallback like feet.
+        if len(contact_indices) < 2:
+            self.left_foot_idx = [idx for idx , name in enumerate(self._dof_names) if name.startswith("L") and name[2:] in ["Toe"]]
+            self.right_foot_idx = [idx for idx , name in enumerate(self._dof_names) if name.startswith("R") and name[2:] in ["Toe"]]
+            contact_indices = [self.left_foot_idx, self.right_foot_idx]
+
+        return contact_indices
+
 
     def _compute_reward(self, actions):
         body_pos = self._rigid_body_pos
@@ -879,6 +951,28 @@ class HumanoidIm(humanoid_amp_task.HumanoidAMPTask):
 
             self.rew_buf[:] += power_reward
             self.reward_raw = torch.cat([self.reward_raw, power_reward[:, None]], dim=-1)
+
+        # print(self._rigid_body_pos.shape,self._contact_forces.shape)
+
+        # Compute the Ground Contact Management Reward
+        # lambda_contact = 0.5  # Example value for the scaling factor
+        # contact_reward = 0
+
+        # for part_idx in self._contact_body_ids:  # Use self._contact_body_ids for correct indexing
+        #     actual_contact = self.get_actual_contact(part_idx)
+        #     desired_contact = self.get_desired_contact(part_idx)
+        #     contact_reward += torch.exp(-lambda_contact * torch.abs(actual_contact - desired_contact))
+
+        # # Compute the Balance and Stability Reward
+        # eta_balance = 1.0  # Example value for the scaling factor
+        # p_COM = self.get_com_position()
+        # p_base = self.get_base_position()
+
+        # balance_reward = -eta_balance * torch.norm(p_COM - p_base, dim=-1)
+
+        # # Integrate both rewards
+        # self.rew_buf[:] += contact_reward + balance_reward
+        # self.reward_raw = torch.cat([self.reward_raw, contact_reward[:, None], balance_reward[:, None]], dim=-1)
         
         return
 

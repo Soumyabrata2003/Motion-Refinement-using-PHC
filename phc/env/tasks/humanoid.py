@@ -124,6 +124,15 @@ class Humanoid(BaseTask):
         self.self_obs_buf = torch.zeros((self.num_envs, self.get_self_obs_size()), device=self.device, dtype=torch.float)
         self.reward_raw = torch.zeros((self.num_envs, 1)).to(self.device)
 
+        self.time_step_counter = 0
+        self.pose_aa_file = '/home/data/soumyabrata/mixamo_out_full/pose_aa_full.npz'
+        # if os.path.exists(self.pose_aa_file):
+        #     os.remove(self.pose_aa_file)
+
+        self.root_trans_file = '/home/data/soumyabrata/mixamo_out_full/root_trans_full.npz'
+        # if os.path.exists(self.root_trans_file):
+        #     os.remove(self.root_trans_file)
+
         return
 
     def _load_proj_asset(self):
@@ -214,12 +223,18 @@ class Humanoid(BaseTask):
 
         self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)
         bodies_per_env = self._rigid_body_state.shape[0] // self.num_envs
+
+        # print("num_envs:",self.num_envs,"bodies_per_env:",bodies_per_env)
         self._rigid_body_state_reshaped = self._rigid_body_state.view(self.num_envs, bodies_per_env, 13)
+
+        # print(self._rigid_body_state_reshaped.shape)
 
         self._rigid_body_pos = self._rigid_body_state_reshaped[..., :self.num_bodies, 0:3]
         self._rigid_body_rot = self._rigid_body_state_reshaped[..., :self.num_bodies, 3:7]
         self._rigid_body_vel = self._rigid_body_state_reshaped[..., :self.num_bodies, 7:10]
         self._rigid_body_ang_vel = self._rigid_body_state_reshaped[..., :self.num_bodies, 10:13]
+
+        # print(self._rigid_body_rot.shape)
         
         if self.self_obs_v == 2:
             self._rigid_body_pos_hist = torch.zeros((self.num_envs, self.past_track_steps, self.num_bodies, 3), device=self.device, dtype=torch.float)
@@ -1304,6 +1319,86 @@ class Humanoid(BaseTask):
         self._compute_reset() 
         
         self._compute_observations()  # observation for the next step.
+
+        if self._has_upright_start:
+                body_quat = self._rigid_body_rot
+                root_trans = self._rigid_body_pos[:, 0, :]
+                self.pre_rot = sRot.from_quat([0.5, 0.5, 0.5, 0.5])
+                from smpl_sim.smpllib.smpl_joint_names import SMPL_BONE_ORDER_NAMES, SMPLX_BONE_ORDER_NAMES, SMPLH_BONE_ORDER_NAMES, SMPL_MUJOCO_NAMES, SMPLH_MUJOCO_NAMES
+                
+                if self.humanoid_type == "smpl":
+                    self.mujoco_2_smpl = [self._body_names_orig.index(q) for q in SMPL_BONE_ORDER_NAMES if q in self._body_names_orig]
+                
+                if self.vis_ref and len(self.ref_motion_cache['dof_pos']) == self.num_envs:
+                    ref_body_quat = self.ref_motion_cache['rb_rot']
+                    ref_root_trans = self.ref_motion_cache['root_pos']
+                        
+                    body_quat = torch.cat([body_quat, ref_body_quat])
+                    root_trans = torch.cat([root_trans, ref_root_trans])
+                        
+                N = body_quat.shape[0]
+                offset = self.skeleton_trees[0].local_translation[0].cuda()
+                root_trans_offset = root_trans - offset
+                    
+                pose_quat = (sRot.from_quat(body_quat.reshape(-1, 4).numpy()) * self.pre_rot).as_quat().reshape(N, -1, 4)
+                new_sk_state = SkeletonState.from_rotation_and_root_translation(self.skeleton_trees[0], torch.from_numpy(pose_quat), root_trans.cpu(), is_local=False)
+                local_rot = new_sk_state.local_rotation
+                pose_aa = sRot.from_quat(local_rot.reshape(-1, 4).numpy()).as_rotvec().reshape(N, -1, 3)
+                pose_aa = torch.from_numpy(pose_aa[:, self.mujoco_2_smpl, :].reshape(N, -1)).cuda()
+        
+        
+        # print(self._name_samples)
+
+        #Trans saving
+        root_trans_np = root_trans[0].cpu().numpy().reshape(1,-1)
+        data = np.load(self.root_trans_file, allow_pickle=True)
+        list_of_dicts = data['data'].tolist()
+        root_trans_list = list_of_dicts[-1]['root_trans'].tolist()
+
+        # Ensure all items in pose_aa_list are reshaped to (1, 72)
+        root_trans_list = [np.array(item).reshape(1, -1) for item in root_trans_list]
+        root_trans_list.append(root_trans_np.reshape(1, -1).tolist())
+
+        # Convert the list back to a numpy array
+        try:
+            root_trans_append = np.array(root_trans_list)
+            list_of_dicts[-1]['root_trans']=root_trans_append
+            np.savez(self.root_trans_file, data=list_of_dicts)
+        except ValueError as e:
+            print(f"Error converting list to numpy array: {e}")
+            print("root_trans_list contents:")
+            for i, item in enumerate(root_trans_list):
+                print(f"Item {i}: {np.array(item).shape if isinstance(item, (list, np.ndarray)) else 'Not an array'}")
+
+        
+
+        #Pose saving
+        pose_aa_np = pose_aa[0].cpu().numpy().reshape(1,-1)
+        # print(type(pose_aa_np),pose_aa_np.shape)
+        
+        data = np.load(self.pose_aa_file, allow_pickle=True)
+        list_of_dicts = data['data'].tolist()
+        pose_aa_list = list_of_dicts[-1]['pose_aa'].tolist()
+
+        # Print the shape of the new data being appended
+        # print(f"Appending pose_aa_np with shape: {pose_aa_np.shape}")
+
+        # Ensure all items in pose_aa_list are reshaped to (1, 72)
+        pose_aa_list = [np.array(item).reshape(1, -1) for item in pose_aa_list]
+        pose_aa_list.append(pose_aa_np.reshape(1, -1).tolist())
+
+        # Convert the list back to a numpy array
+        try:
+            pose_aa_append = np.array(pose_aa_list)
+            list_of_dicts[-1]['pose_aa']=pose_aa_append
+            np.savez(self.pose_aa_file, data=list_of_dicts)
+        except ValueError as e:
+            print(f"Error converting list to numpy array: {e}")
+            print("pose_aa_list contents:")
+            for i, item in enumerate(pose_aa_list):
+                print(f"Item {i}: {np.array(item).shape if isinstance(item, (list, np.ndarray)) else 'Not an array'}")
+
+        self.time_step_counter+=1
 
         self.extras["terminate"] = self._terminate_buf
         self.extras["reward_raw"] = self.reward_raw.detach()

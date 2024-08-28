@@ -1,0 +1,60 @@
+# npz to bvh conversion for exported motions
+import os
+os.chdir(r"C:\Users\Soumyabrata\smpl2bvh\CharacterAnimationTools")
+print(os.getcwd())
+
+from anim import amass, bvh
+from anim.animation import Animation
+
+# Define directories
+success_dir = r"C:\Users\Soumyabrata\Desktop\success_motions_PHC"
+fail_dir = r"C:\Users\Soumyabrata\Desktop\failure_motions_PHC"
+output_success_dir = r"C:\Users\Soumyabrata\Desktop\success_motions_PHC_bvh"
+output_fail_dir = r"C:\Users\Soumyabrata\Desktop\failure_motions_PHC_bvh"
+smplh_path = r"C:\Users\Soumyabrata\smpl2bvh\CharacterAnimationTools\data\smplh\neutral\model.npz"
+
+def convert_npz_to_bvh(npz_path, output_dir, flag):
+    try:
+        anim: Animation = amass.load(
+            amass_motion_path=npz_path,
+            smplh_path=smplh_path,
+            load_hand=False,
+            remove_betas=True
+        )
+
+        if flag == 0:
+            pth = fail_dir
+        else:
+            pth = success_dir
+
+        # Construct output path
+        relative_path = os.path.relpath(npz_path, start=pth)  # change success_dir to fail_dir when processing fail_dir
+        output_bvh_path = os.path.join(output_dir, os.path.splitext(relative_path)[0] + '.bvh')
+        os.makedirs(os.path.dirname(output_bvh_path), exist_ok=True)
+
+        # Save as .bvh
+        bvh.save(filepath=output_bvh_path, anim=anim)
+        print(f"Converted and saved {output_bvh_path}")
+    except Exception as e:
+        print(f"Failed to convert {npz_path}: {e}")
+
+# Function to process npz files in a specific directory
+def process_npz_files(input_dir, output_dir, flag):
+    for motion_name in os.listdir(input_dir):
+        motion_dir = os.path.join(input_dir, motion_name)
+        if os.path.isdir(motion_dir):
+            for group_name in os.listdir(motion_dir):
+                group_dir = os.path.join(motion_dir, group_name)
+                if os.path.isdir(group_dir):
+                    for file in os.listdir(group_dir):
+                        if file.endswith('.npz'):
+                            npz_path = os.path.join(group_dir, file)
+                            convert_npz_to_bvh(npz_path, output_dir, flag)
+
+# Process all .npz files in the success directory
+process_npz_files(success_dir, output_success_dir, 1)
+
+# Process all .npz files in the failure directory
+process_npz_files(fail_dir, output_fail_dir, 0)
+
+print("Conversion process complete.")

@@ -1,0 +1,70 @@
+# for all motions
+import numpy as np
+import os
+
+# Define file paths
+pose_aa_file = r"C:\Users\Soumyabrata\Desktop\pose_aa_full.npz"
+root_trans_file = r"C:\Users\Soumyabrata\Desktop\root_trans_full.npz"
+success_dir = r"C:\Users\Soumyabrata\Desktop\success_motions_PHC"
+fail_dir = r"C:\Users\Soumyabrata\Desktop\failure_motions_PHC"
+ref_dir = r"C:\Users\Soumyabrata\Desktop\motions_PHC_npz"
+
+# Load pose_aa_full.npz
+pose_aa_data = np.load(pose_aa_file, allow_pickle=True)
+pose_aa_list = pose_aa_data['data'].tolist()
+
+# Load root_trans_full.npz
+root_trans_data = np.load(root_trans_file, allow_pickle=True)
+root_trans_list = root_trans_data['data'].tolist()
+
+# Create mappings for quick access
+pose_aa_mapping = {entry['name_sample']: entry['pose_aa'] for entry in pose_aa_list}
+root_trans_mapping = {entry['name_sample']: entry['root_trans'] for entry in root_trans_list}
+
+succ = 0
+fail = 0
+
+# Process each sample and save to new .npz files
+for name_sample, pose_aa in pose_aa_mapping.items():
+    if name_sample in root_trans_mapping:
+        root_trans = root_trans_mapping[name_sample]
+        root_trans_squeezed = np.squeeze(root_trans, axis=1)
+        pose_aa_squeezed = np.squeeze(pose_aa, axis=1)
+
+        # Correctly parse parts of the name_sample
+        parts = name_sample.split('_')
+        if len(parts) >= 4:
+            # Combine the first part with prefix adjustment
+            prefix_part = parts[0][2:]  # Removing the '0-' prefix
+            file_name = f"{prefix_part}_{parts[1]}/{parts[2]}/{parts[3]}.npz"
+
+            ref_path = os.path.join(ref_dir,file_name)
+            ref_data = np.load(ref_path)
+
+            if (ref_data['poses'].shape == pose_aa_squeezed.shape) and (ref_data['trans'].shape == root_trans_squeezed.shape):
+                file_path = os.path.join(success_dir, file_name)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                gender = 'male'
+                fps = 30
+                np.savez(file_path, trans=root_trans_squeezed, gender=gender, mocap_framerate=fps, poses=pose_aa_squeezed)
+                succ+=1
+                print(f"Success: Saved {file_path}")
+            else:
+                file_path = os.path.join(fail_dir, file_name)
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                gender = 'male'
+                fps = 30
+                np.savez(file_path, trans=root_trans_squeezed, gender=gender, mocap_framerate=fps, poses=pose_aa_squeezed)
+                fail+=1
+                print(f"Failure: Saved {file_path}")
+    
+        else:
+            print(f"Unexpected format in name_sample: {name_sample}")
+
+    else:
+        print(f"Missing root_trans for sample: {name_sample}")
+
+print("Successful samples:",succ)
+print("Failed samples:",fail)
+
+print("Processing complete.")

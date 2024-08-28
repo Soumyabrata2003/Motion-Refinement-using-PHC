@@ -154,7 +154,8 @@ class MotionLibBase():
         else:
             self._motion_data_list = np.array(self._motion_data_load)
             self._motion_data_keys = np.array(self._motion_data_load)
-        
+
+        # self._curr_name = self._motion_data_keys[0]
         self._num_unique_motions = len(self._motion_data_list)
         if self.mode == MotionlibMode.directory:
             self._motion_data_load = joblib.load(self._motion_data_load[0]) # set self._motion_data_load to a sample of the data 
@@ -215,6 +216,9 @@ class MotionLibBase():
         self._curr_motion_ids = sample_idxes
         self.one_hot_motions = torch.nn.functional.one_hot(self._curr_motion_ids, num_classes = self._num_unique_motions).to(self._device)  # Testing for obs_v5
         self.curr_motion_keys = self._motion_data_keys[sample_idxes]
+        # print("self.curr_motion_keys:",self.curr_motion_keys)
+        # self._curr_name = self.curr_motion_keys
+        # print("self._curr_name:",self._curr_name)
         self._sampling_batch_prob = self._sampling_prob[self._curr_motion_ids] / self._sampling_prob[self._curr_motion_ids].sum()
 
         print("\n****************************** Current motion keys ******************************")
@@ -325,6 +329,34 @@ class MotionLibBase():
 
         num_motions = self.num_motions()
         total_len = self.get_total_length()
+        #pose_aa_full
+        pose_aa_file = '/home/data/soumyabrata/mixamo_out_full/pose_aa_full.npz'
+        new_entry = {
+            'name_sample': self.curr_motion_keys,
+            'pose_aa': np.array([])
+        }
+        if not os.path.exists(pose_aa_file):
+            np.savez(pose_aa_file, data=[new_entry])
+        else:
+            data = np.load(pose_aa_file, allow_pickle=True)
+            list_of_dicts = data['data'].tolist()
+            list_of_dicts.append(new_entry)
+            np.savez(pose_aa_file, data=list_of_dicts)
+            
+        #root_trans_full
+        root_trans_file = '/home/data/soumyabrata/mixamo_out_full/root_trans_full.npz'
+        new_entry = {
+            'name_sample': self.curr_motion_keys,
+            'root_trans': np.array([])
+        }
+        if not os.path.exists(root_trans_file):
+            np.savez(root_trans_file, data=[new_entry])
+        else:
+            data = np.load(root_trans_file, allow_pickle=True)
+            list_of_dicts = data['data'].tolist()
+            list_of_dicts.append(new_entry)
+            np.savez(root_trans_file, data=list_of_dicts)
+
         print(f"Loaded {num_motions:d} motions with a total length of {total_len:.3f}s and {self.gts.shape[0]} frames.")
         return motions
 

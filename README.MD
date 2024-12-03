@@ -1,4 +1,4 @@
-# Post-processing using Perpetual Humanoid Control for Real-time Simulated Avatars (on bvh files)
+# Motion Refinement using Perpetual Humanoid Control for Real-time Simulated Avatars (on bvh files)
 
 This is a modified version of PHC (Perpetual Humanoid Control for Real-time Simulated Avatars ICCV 23) including the conversion of mixamo format bvh files to AMASS-style npz files for motion refinement. It has been faithfully borrowed from the official coding implementation (https://github.com/ZhengyiLuo/PHC). We have primarily used _single_ _primitive_ for training and evaluating the samples since it leads to 100% success rate for imitation (as per PHC standards) and are easier to train than multiple primitives which is not automated in PHC. Our rationale for using a high quality motion imitator like PHC for refining sample motions can be attributed to its robustness to noisy data alongside its performance.
 

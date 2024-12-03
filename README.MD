@@ -1,4 +1,4 @@
-# Motion Refinement using Perpetual Humanoid Control for Real-time Simulated Avatars (on bvh files)
+# Motion Refinement using PHC as a post processing method
 
 This is a modified version of PHC (Perpetual Humanoid Control for Real-time Simulated Avatars ICCV 23) including the conversion of mixamo format bvh files to AMASS-style npz files for motion refinement. It has been faithfully borrowed from the official coding implementation (https://github.com/ZhengyiLuo/PHC). We have primarily used _single_ _primitive_ for training and evaluating the samples since it leads to 100% success rate for imitation (as per PHC standards) and are easier to train than multiple primitives which is not automated in PHC. Our rationale for using a high quality motion imitator like PHC for refining sample motions can be attributed to its robustness to noisy data alongside its performance.
 
@@ -119,49 +119,6 @@ python phc/run_hydra_2.py learning=im_big exp_name=phc_prim env=env_im robot=smp
 ```
 
 
-#### Train full PNN model 
-
-
-Training PHC is not super automated yet, so it requires some (a lot of) manual steps, and invovles changing the config file a couple of times during training based on the training phase. The `phc_shape_pnn_train_iccv.yaml` config file provides a starting point for training primitives. 
-
-First, we will train one primitive, and keep an eye on its performance (--has_eval) flag. In the config, the "training_prim" is the primitive that is being trained. This need to be updated accordingly. 
-
-```
-python phc/run_hydra.py learning=im_pnn_big env=env_im_pnn robot=smpl_humanoid env.motion_file=[motion_file] exp_name=[exp_name] 
-```
-
-After the performance plateaus, we will dump the most recent sequences that the primitives has failed on, and use them to train the next primitive. Here idx is the primitive that should be trained. 
-
-```
-python scripts/pmcp/forward_pmcp.py --exp [exp_name] --epoch [epoch] --idx {idx}
-```
-The above script will dump two files: one is the next hard sequences to learn, and anothere one is the checkpoint to resume with the copied primitive. 
-
-To train the next primitive, run teh following script:
-```
-python phc/run_hydra.py learning=im_pnn_big env=env_im_pnn robot=smpl_humanoid env.motion_file=[motion_file] epoch=[include epoch+1 from previous step] env.fitting=True env.training_prim=1
-```
-
-Repeat this process until no hard sequences are left. Then, to train the fail-state recovery primitive on simple locomotion data. 
-
-
-```
-python phc/run_hydra.py learning=im_pnn_big exp_name=phc_shape_pnn_iccv env=env_im_pnn robot=smpl_humanoid env.motion_file=[motion_file] epoch=[include current epoch + 1 from the forward_pmcp step] env.fitting=True env.training_prim=[+1] env.zero_out_far=True env.zero_out_far_train=True env.getup_udpate_epoch={epoch}
-```
-
-After all primitives are trained, train the composer: 
-
-```
-python phc/run_hydra.py learning=im_mcp_big exp_name=[] env=env_im_getup_mcp robot=smpl_humanoid env.motion_file=[motion_file] env.models=['output/HumanoidIm/{exp_name}/Humanoid.pth']
-```
-
-When training the composer, you can repeat the process above (progressive mining hard sequences) to improve performance. 
-
-
-You can also just train one model for imitation (no PNN):
-```
-python phc/run_hydra.py learning=im exp_name=phc_prim_iccv  env=env_im robot=smpl_humanoid_shape robot.freeze_hand=True robot.box_body=False env.motion_file=sample_data/amass_isaac_standing_upright_slim.pkl
-```
 
 ## Trouble Shooting
 
